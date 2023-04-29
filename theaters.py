@@ -355,10 +355,7 @@ class Jinbocho_Theater(Theater):
 
         return soup
 
-# Webページの仕様が変わったら、アンダーバーから始まるメソッドのいずれかを更新する必要がある
-
 # TODO: どこで時間がかかっているのか特定する
-# TODO: loggerを使って特定する
 
 class Cinemavera_Shibuya(Theater):
     def __init__(self):

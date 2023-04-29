@@ -264,6 +264,7 @@ class Scheduler():
         # スケジュールデータフレームを一行ずつ見ていく
 
         # 映画館ごとに上映中のプログラムの映画一覧を表示
+        # TODO: 上映日時の最後のやつが過ぎてるやつはグレーにする
         for theater_to_be_displayed in self.theaters_to_be_displayed:
             # 映画館の辞書を取得
             data_manager = self.data_manager_dict[theater_to_be_displayed]
@@ -302,7 +303,15 @@ class Scheduler():
                         movie_start_datetime_str_list = movie_dict["movie_start_datetime_str_list"]
                         movie_url = movie_dict["movie_url"] # !
 
-                        print(f'{movie_id}. {movie_title} （{movie_duration}）')                        
+                        # 日付を取得できてないやつ対策
+                        if movie_start_datetime_str_list:
+                            over = datetime.now() > datetime.strptime(movie_start_datetime_str_list[-1], "%Y-%m-%d %H:%M")
+                        else:
+                            over = False
+                        if over:
+                            print(Fore.LIGHTBLACK_EX, end='')
+
+                        print(f'{movie_id}. {movie_title} （{movie_duration}）')
 
                         # 詳細表示
                         if self.detail:
@@ -312,6 +321,9 @@ class Scheduler():
                             for movie_start_datetime_str in movie_start_datetime_str_list:
                                 print(datetime.strptime(movie_start_datetime_str, "%Y-%m-%d %H:%M").strftime("%-m月%-d日 %H:%M"))
                             print(movie_url)
+
+                        if over:
+                            print(Style.RESET_ALL, end='')
                         
                         if self.detail:
                             print(kugiri("-"))
