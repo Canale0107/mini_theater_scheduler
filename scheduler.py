@@ -207,7 +207,7 @@ class Scheduler():
         movie_synopsis = movie_dict["movie_synopsis"] # !
         movie_url = movie_dict["movie_url"] # !
 
-        schedule_start_time_str = schedule_start_time.strftime("%m月%d日 %H:%M") # !
+        schedule_start_time_str = schedule_start_time.strftime("%-m月%-d日 %H:%M") # !
         schedule_end_time_str = schedule_end_time.strftime("%H:%M") # !
 
         movie_info = Movie_Info(theater_name = theater_name,
@@ -310,7 +310,7 @@ class Scheduler():
                             print("■".join([""]+[f'{work}：{name}' for work, name in movie_staff_dict.items()]))
                             print(movie_synopsis)
                             for movie_start_datetime_str in movie_start_datetime_str_list:
-                                print(datetime.strptime(movie_start_datetime_str, "%Y-%m-%d %H:%M").strftime("%m月%d日 %H:%M"))
+                                print(datetime.strptime(movie_start_datetime_str, "%Y-%m-%d %H:%M").strftime("%-m月%-d日 %H:%M"))
                             print(movie_url)
                         
                         if self.detail:
@@ -324,7 +324,7 @@ class Scheduler():
         colorama.init()
 
         print(kugiri("="))
-        print(f'{self.show_date.strftime("%m月%d日")}の上映情報')
+        print(f'{self.show_date.strftime("%-m月%-d日")}の上映情報')
         print(f'表示対象映画館：{", ".join([self.theaters_settings_dict[theater_class_name]["THEATER_NAME"] for theater_class_name in self.theaters_to_be_displayed])}')
         print(kugiri("="))
 
