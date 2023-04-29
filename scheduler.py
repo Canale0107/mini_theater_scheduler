@@ -173,8 +173,8 @@ class Scheduler():
         schedule_program_id = row['プログラムID']
         schedule_movie_id = row['映画ID']
 
-        schedule_start_time = datetime.strptime(row['開始日時'], "%Y-%m-%d %H:%M:%S")
-        schedule_end_time = datetime.strptime(row['終了日時'], "%Y-%m-%d %H:%M:%S")
+        schedule_start_time = datetime.strptime(row['開始日時'], "%Y-%m-%d %H:%M")
+        schedule_end_time = datetime.strptime(row['終了日時'], "%Y-%m-%d %H:%M")
 
         data = (schedule_theater_class_name, schedule_program_id, schedule_movie_id, schedule_start_time, schedule_end_time)
 
@@ -310,7 +310,7 @@ class Scheduler():
                             print("■".join([""]+[f'{work}：{name}' for work, name in movie_staff_dict.items()]))
                             print(movie_synopsis)
                             for movie_start_datetime_str in movie_start_datetime_str_list:
-                                print(datetime.strptime(movie_start_datetime_str, "%Y-%m-%d %H:%M:%S").strftime("%m月%d日 %H:%M"))
+                                print(datetime.strptime(movie_start_datetime_str, "%Y-%m-%d %H:%M").strftime("%m月%d日 %H:%M"))
                             print(movie_url)
                         
                         if self.detail:
@@ -401,8 +401,8 @@ class Scheduler():
             reader = csv.DictReader(csvfile)
             for row in reader:
                 event_name = row['event_name']
-                start_time = datetime.strptime(row['start_time'], '%Y-%m-%d %H:%M:%S')
-                end_time = datetime.strptime(row['end_time'], '%Y-%m-%d %H:%M:%S')
+                start_time = datetime.strptime(row['start_time'], '%Y-%m-%d %H:%M')
+                end_time = datetime.strptime(row['end_time'], '%Y-%m-%d %H:%M')
                 event = create_event(event_name, start_time, end_time)
                 calendar.add_component(event)
 

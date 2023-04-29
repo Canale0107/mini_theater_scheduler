@@ -291,7 +291,7 @@ class Jinbocho_Theater(Theater):
                 # 上映開始時間
                 movie_start_datetime = datetime(year, month, day, int(time_hour_str), int(time_minute_str))
 
-                movie_start_datetime_str = movie_start_datetime.strftime("%Y-%m-%d %H:%M:%S")
+                movie_start_datetime_str = movie_start_datetime.strftime("%Y-%m-%d %H:%M")
 
                 movie_start_datetime_str_list.append(movie_start_datetime_str)
 
@@ -671,7 +671,7 @@ class Cinemavera_Shibuya(Theater):
                         minute = int(match.group(2))
 
                     movie_start_datetime = datetime(year, month, date, hour, minute)
-                    movie_start_datetime_str = movie_start_datetime.strftime("%Y-%m-%d %H:%M:%S")
+                    movie_start_datetime_str = movie_start_datetime.strftime("%Y-%m-%d %H:%M")
                     
                     # 洋画の場合、邦題の後にスペースを空けて原題が入るが、スケジュールには邦題しか乗らないので、その対策。
                     if movie_title.split(" ")[0] in film_text:

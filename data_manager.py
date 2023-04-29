@@ -251,11 +251,11 @@ class on_screen_time:
 
         movie_start_datetime_str = self.movie_start_datetime_str_list[self.index]
         # 上映開始datetimeを取得
-        movie_start_datetime = datetime.strptime(movie_start_datetime_str, "%Y-%m-%d %H:%M:%S")
+        movie_start_datetime = datetime.strptime(movie_start_datetime_str, "%Y-%m-%d %H:%M")
         # 上映終了datetimeを計算
         movie_end_datetime = movie_start_datetime + self.movie_timedelta
         # 上映終了datetimeを文字列に変換
-        movie_end_datetime_str = movie_end_datetime.strftime("%Y-%m-%d %H:%M:%S")
+        movie_end_datetime_str = movie_end_datetime.strftime("%Y-%m-%d %H:%M")
 
         result = (movie_start_datetime_str, movie_end_datetime_str)
         self.index += 1
