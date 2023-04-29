@@ -207,7 +207,7 @@ class Scheduler():
         movie_synopsis = movie_dict["movie_synopsis"] # !
         movie_url = movie_dict["movie_url"] # !
 
-        schedule_start_time_str = schedule_start_time.strftime("%H:%M") # !
+        schedule_start_time_str = schedule_start_time.strftime("%m月%d日 %H:%M") # !
         schedule_end_time_str = schedule_end_time.strftime("%H:%M") # !
 
         movie_info = Movie_Info(theater_name = theater_name,

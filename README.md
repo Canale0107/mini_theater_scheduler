@@ -23,7 +23,8 @@ Webスクレイピングをしてミニシアターのスケジュールを集�
 - `theater_data/theater_data.json`　(`scheduler.py`を実行すると作成される)
 
 ### スケジュールデータ
-= `schedule/schedule.csv`　(`scheduler.py`を実行すると作成される)
+- `schedule/schedule.csv`　(`scheduler.py`を実行すると作成される)
 
 ## 使用方法
-`scheduler.py --help`を実行して確認できます。
+1. 必要なパッケージをインストール 
+2. `python scheduler.py --help`を実行して確認できます。
