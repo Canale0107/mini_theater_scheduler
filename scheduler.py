@@ -11,7 +11,7 @@ from lib import kugiri
 from data_manager import Data_Manager
 import settings
 
-import theaters
+from theaters import Jinbocho_Theater, Cinemavera_Shibuya
 
 # from jinbocho_theater import Jinbocho_Theater
 # from cinemavera_shibuya import Cinemavera_Shibuya
