@@ -1,0 +1,2 @@
+# mini_theater_scheduler
+Webスクレイピングをしてミニシアターのスケジュールを集めるプログラム
