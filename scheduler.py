@@ -198,7 +198,7 @@ class Scheduler():
         program_title = program_dict["program_title"] # !
 
         # 映画の情報
-        movie_dict = program_dict["movies"][schedule_movie_id]
+        movie_dict = program_dict["movies"][str(schedule_movie_id)]
         movie_title = movie_dict["movie_title"] # !
         movie_duration = movie_dict["movie_timedelta_minute_str"] # !
         # 詳細
