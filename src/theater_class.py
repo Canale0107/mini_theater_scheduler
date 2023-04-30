@@ -12,7 +12,7 @@ class Theater():
         self.theater_class_name = self.__class__.__name__
         
         # 映画館の情報をJSONファイルから読み込む
-        with open('theaters_settings.json') as f:
+        with open('conf/theaters_settings.json') as f:
             theaters_dict = json.load(f)
         
             self.theater_name = theaters_dict[self.theater_class_name]["THEATER_NAME"]

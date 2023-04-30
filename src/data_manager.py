@@ -9,7 +9,7 @@ from theater_class import Theater, Program, Movie
 # from jinbocho_theater import Jinbocho_Theater # for debug
 # from cinemavera_shibuya import Cinemavera_Shibuya # for debug
 
-import settings
+from conf import settings
 
 from lib import kugiri
 

@@ -26,5 +26,10 @@ Webスクレイピングをしてミニシアターのスケジュールを集�
 - `schedule/schedule.csv`　(`scheduler.py`を実行すると作成される)
 
 ## 使用方法
-1. 必要なパッケージをインストール 
+### Pythonを使って実行
+1. 必要なパッケージをインストール (`docker`ディレクトリ内の`requirements.txt`を参照)
 2. `python scheduler.py --help`を実行して確認できます。
+
+### Dockerを使って実行
+1. `docker`ディレクトリに移動し、`bash build.sh`を実行してイメージをビルド
+2. `bash run.sh`を実行して、コンテナ内で`scheduler.py`を実行

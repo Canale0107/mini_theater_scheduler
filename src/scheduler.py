@@ -9,12 +9,8 @@ import argparse
 from datetime import date, datetime, timedelta
 from lib import kugiri
 from data_manager import Data_Manager
-import settings
-
+from conf import settings
 from theaters import Jinbocho_Theater, Cinemavera_Shibuya
-
-# from jinbocho_theater import Jinbocho_Theater
-# from cinemavera_shibuya import Cinemavera_Shibuya
 
 # 映画館ごとに日付を管理したり表示したりするクラス
 # オプションで、スケジュール表示対象の映画館を指定する
@@ -45,10 +41,10 @@ class Scheduler():
         clear_terminal()
 
         # 映画館の設定を読み込む
-        with open('theaters_settings.json') as f:
+        with open('conf/theaters_settings.json') as f:
             self.theaters_settings_dict = json.load(f)
 
-        # theaters_settings.jsonから映画館クラス名の一覧を取得する 
+        # conf/theaters_settings.jsonから映画館クラス名の一覧を取得する 
         self.theater_class_name_list = [theater_class_name for theater_class_name in self.theaters_settings_dict.keys()]
 
         self.get_options()

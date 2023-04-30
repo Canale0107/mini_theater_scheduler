@@ -4,3 +4,5 @@ schedule/
 theater_data/
 
 .DS_Store
+
+build/
