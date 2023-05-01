@@ -1,9 +1,7 @@
 import os
 import re
-import csv
 import json
 import pandas as pd
-import argparse
 from datetime import date, datetime, timedelta
 from theater_class import Theater, Program, Movie
 # from jinbocho_theater import Jinbocho_Theater # for debug
@@ -22,15 +20,17 @@ class Data_Manager():
     
     # 強制的にWebスクレイピングを行いたい場合Trueにするクラス変数（全オブジェクト共通）
     scrape = False
-
+    # last_updateが設定ファイルで指定した日数以前のものだった時Trueになるフラグ
+    old = False
+    # 映画館データが存在しなかった時にTrueになるフラグ
+    no_data = False
     # スクレイピングが行われたかどうかを保持するフラグ
     scraped = False
     
     def __init__(self, theater_object):
         print(kugiri("="))
-        print(f'{theater_object.theater_name} data manager')
+        print(f'{theater_object.theater_class_name} Data Manager')
 
-        self.last_update = None
         self.theater_object = theater_object
 
         # 入出力を行うファイルのパス
@@ -42,79 +42,42 @@ class Data_Manager():
 
         self.get_informed()
 
-    def get_last_update_str(self):
-        return self.last_update.strftime("%Y-%m-%d")
-
     def get_theater_dict(self):
         return self.theater_object.get_dictionary()
 
     def get_informed(self):
-        
         """
-        Webスクレイピング、またはJSONファイルのロードにより、self.theater_dataに情報を詰める
+        JSONファイルをロードして、必要に応じてWebスクレイピングを行い、self.theater_dataに情報を詰める
         """
-
-        # --scrapeが指定された場合、last_updateを本日の日付とし、scrapeを行ってtheater_objectを作成し、self.theater_dataとする
- 
-        # theater_data.jsonがある場合、self.theater_dataにlast_updateとtheater_objectをロード
-        if os.path.exists(self.theater_data_path):
-            self.load_theater_data()
-
-            if self.theater_object.theater_class_name not in self.theater_data_dict:
-                print(f"ロードしたデータに{self.theater_object.theater_name}のデータが含まれません。")
-                self.scrape_theater_data()
-
-            if Data_Manager.scrape:
-                print("--scrapeオプションが指定されました。")
-                self.scrape_theater_data()
-
-        # theater_data.jsonがない場合
-        else:
-            # データディレクトリがない場合、ディレクトリを作成
-            if not os.path.exists(self.data_dir_path):
-                os.makedirs(self.data_dir_path)
-                logging.debug(f'directory not exists so directory {self.data_dir_path} created.')
-            
-            print(f'データファイル{self.theater_data_path}が存在しません。')
-            self.scrape_theater_data()
-
-
-    # TODO: initに書き、ファイルが存在する場合ロードし、ない場合last_updateだけ保存する
-    # jsonファイルの、自分の映画館のところだけロード
-    def load_theater_data(self):
-        """
-        JSONファイルをロードして、最終取得日と映画館の辞書を取得
-        """
+        # 新たにスクレイピングを行う場合でも、追記していくので一旦ロードしておく必要がある
         with open(self.theater_data_path, 'r') as file:
             self.theater_data_dict = json.load(file)
-        print(f'データをロードしました。')
 
-        # ファイルに最終更新日が書いてあれば、それを取得
-        if "last_update" in self.theater_data_dict:
-            self.last_update = datetime.strptime(self.theater_data_dict["last_update"], "%Y-%m-%d").date()
-            print(f"最終取得日:{self.get_last_update_str()}")
+        if Data_Manager.scrape:
+            print("--scrapeオプションが指定されたので、Webスクレイピングを行います。") 
+            self.scrape_theater_data()
 
+        elif Data_Manager.no_data:
+            print(f"データが存在しなかったので、Webスクレイピングを行います")
+            self.scrape_theater_data()
+
+        elif Data_Manager.old:
+            print(f'最終取得日から{settings.UPDATE_DAYS_DELTA}以上経っていたので、Webスクレイピングを行います。')
+            self.scrape_theater_data()
+
+        else:
             # 自分の映画館のクラス名がファイルに登録されていた場合
-            if self.theater_object.theater_class_name in self.theater_data_dict:
+            if self.theater_object.theater_class_name in self.theater_data_dict.keys():
                 theater_dict = self.theater_data_dict[self.theater_object.theater_class_name]
 
-                # 最終取得日が{settings.UPDATE_DAYS_DELTA}日以上前ならWebスクレイピングを行う
-                if date.today() > self.last_update + timedelta(days = settings.UPDATE_DAYS_DELTA):
-                    print(f'最終取得日から{settings.UPDATE_DAYS_DELTA}以上経っています。')
-                    self.scrape_theater_data()
-                # 最終取得日が{settings.UPDATE_DAYS_DELTA}日以内の場合
-                else:
-                    print(f'最終取得日が{settings.UPDATE_DAYS_DELTA}日以内です。')
-                    self.load_theater_dict(theater_dict)
-            # "last_update"が書いていなかった場合
+                self.load_theater_dict(theater_dict)
+                print(f'{self.theater_object.theater_name}のデータをロードしました。')
+                print(f'Webスクレイピングによるデータ更新は行いません。')
+            
+            # 自分の映画館のクラス名がファイルに登録されていない場合
             else:
                 print('ファイルにデータが登録されていません。')
                 self.scrape_theater_data()
-
-        # 最終更新日が書いてなければ、スクレイピングを行う
-        else:
-            print('ファイルにデータが登録されていません。')
-            self.scrape_theater_data()
 
         # decode (theater_dict -> theater_object)
     def load_theater_dict(self, theater_dict):
@@ -166,12 +129,10 @@ class Data_Manager():
 
     def scrape_theater_data(self):
         print("Webスクレイピングを行います。")
-        last_update = date.today()
-        self.last_update = last_update
 
         Data_Manager.scraped = True
 
-        # Theaterオブジェクトとしての自分に情報を追加する(to be informed theater object)ために、Webスクレイピングを行う
+        # Webスクレイピングを行い、self.theater_objectに情報を詰める
         self.theater_object.scrape_to_be_informed_theater_object()
         print("Webページをスクレイピングしました。")
 
@@ -185,29 +146,25 @@ class Data_Manager():
 
         theater_dict = self.get_theater_dict()
 
-        # 保存用辞書の最終取得日に、自分のtheater_dataの最終更新日を代入
-        # TODO: last_updateはData_Managerが自分で持てばいい
-        # TODO: そうすると、Theater_Dataクラスはいらなくなる
-        self.theater_data_dict["last_update"] = self.get_last_update_str()
         self.theater_data_dict[self.theater_object.theater_class_name] = theater_dict
 
         with open(self.theater_data_path, 'w', encoding="utf-8") as f:
             json.dump(self.theater_data_dict, f, indent = 4, ensure_ascii=False)
-            print(f"データを{self.theater_data_path}にセーブしました。")
+            print(f"{self.theater_object.theater_name}のデータを{self.theater_data_path}にセーブしました。")
+
 
     def get_df(self):
         """
         theater_objectに対応するpandas.DataFrameを取得する
         """
-        sorted_schedule_list = self._get_sorted_schedule_list()
+        sorted_schedule_list = self._get_schedule_list()
 
         df = pd.DataFrame(sorted_schedule_list, columns=['映画館クラス名', 'プログラムID', '映画ID', '開始日時', '終了日時'])
 
         return df
-
-    # TODO: 後でマージするときにpandasでソートするのでソートしなくてもいい
     
-    def _get_sorted_schedule_list(self):
+    # 後でマージするときにpandasでソートするのでソートしなくてもいい
+    def _get_schedule_list(self):
         schedule_list = []
         theater_class_name = self.theater_object.theater_class_name
         program_object_list = self.theater_object.program_object_list
@@ -220,13 +177,7 @@ class Data_Manager():
                     schedule = [theater_class_name, program_id, movie_id, movie_start_datetime_str, movie_end_datetime_str]
                     schedule_list.append(schedule)
 
-        # print(schedule_list) # for debug
-
-        # movie_start_datetime_strで並べ替え
-        # TODO: x[3]という書き方が好きじゃない
-        sorted_schedule_list = sorted(schedule_list, key=lambda x: x[3])
-
-        return sorted_schedule_list
+        return schedule_list
 
 class on_screen_time:
     """
@@ -261,17 +212,3 @@ class on_screen_time:
         self.index += 1
             
         return result
-
-# for debug
-'''
-if __name__ == '__main__':
-    
-    # 例
-    jinbocho_data_manager = Data_Manager(Jinbocho_Theater())
-    cinemavera_data_manager = Data_Manager(Cinemavera_Shibuya())
-    jinbocho_theater_object = jinbocho_data_manager.theater_data.theater_object
-    print("プログラム一覧：")
-    for program_object in jinbocho_theater_object.program_object_list:
-        program_title = program_object.get_dictionary()["program_title"]
-        print(program_title)
-'''

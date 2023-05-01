@@ -10,7 +10,7 @@ from datetime import date, datetime, timedelta
 from lib import kugiri
 from data_manager import Data_Manager
 from conf import settings
-from theaters import Jinbocho_Theater, Cinemavera_Shibuya
+from theaters import *
 
 # 映画館ごとに日付を管理したり表示したりするクラス
 # オプションで、スケジュール表示対象の映画館を指定する
@@ -49,14 +49,17 @@ class Scheduler():
 
         self.get_options()
 
-        # Schedulerは映画館のデータマネージャのリストを持つ
-        self.data_manager_dict = {}
-        for theater_name in self.theater_class_name_list:
-            theater_class = globals()[theater_name]
-            self.data_manager_dict[theater_name] = Data_Manager(theater_class())
-
         self.schedule_path = f'{settings.SCHEDULE_DIR_PATH }/{settings.SCHEDULE_CSV_FILE_NAME}.csv'
-        self.get_schedule()
+        self.load_schedule()
+        self.load_theater_data()
+
+    def load_theater_data(self):
+        theater_data_path = f'{settings.THEATER_DATA_DIR_PATH}/{settings.THEATER_DATA_JSON_FILE_NAME}.json'
+        if os.path.exists(theater_data_path):
+            with open(theater_data_path, 'r') as file:
+                self.theater_data_dict = json.load(file)
+        else:
+            print(f'映画館データ{theater_data_path}が存在しません。update_database.pyを実行してください。')
     
 
     def get_options(self):
@@ -70,7 +73,6 @@ class Scheduler():
         group.add_argument('--program', action='store_true', help='上映中のプログラムの映画情報を表示', default=None)
 
         # detailオプションはいずれのオプションとも組み合わせて使える
-        parser.add_argument('--scrape', action='store_true', help='強制的にWebスクレイピングを行う')
         parser.add_argument('--detail', action='store_true', help='詳細な情報を表示する')
         # 映画館オプションを設定ファイルから定義する
         for theater_class_name, theater_settings in self.theaters_settings_dict.items():
@@ -96,39 +98,13 @@ class Scheduler():
         self.detail = args.detail
         self.show_program_info = args.program
         self.schedule_search_title = args.title
-        Data_Manager.scrape = args.scrape
 
-    def get_schedule(self):
-        print(kugiri("="))
-        print("get_schedule")
-        # scheduleディレクトリが無い場合、作成
-        if not os.path.exists(settings.SCHEDULE_DIR_PATH ):
-            print(f"ディレクトリ{settings.SCHEDULE_DIR_PATH}を作成します。")
-            os.makedirs(settings.SCHEDULE_DIR_PATH )
-            
-        # scheduleディレクトリにall_schedule.csvがない場合、スケジュールを作成
-        if not os.path.exists(self.schedule_path):
-            self.save_all_schedule()
-
-        # all_schedule.csvがあった場合
+    def load_schedule(self):
+        if os.path.exists(self.schedule_path):
+            self.schedule_df = pd.read_csv(self.schedule_path)
+            print("スケジュールデータをロードしました。")
         else:
-            # どこかでスクレイピングが行われていた場合：
-            if Data_Manager.scraped:
-                print("スケジュールデータを更新します。")
-                self.save_all_schedule()
-            else:
-                print("スケジュールデータは更新されませんでした。")
-                # スクレイピングが行われていなかった場合、保存済みのものをロードする
-                self.schedule_df = pd.read_csv(self.schedule_path)
-                print("スケジュールデータをロードしました。")
-        
-
-    def save_all_schedule(self):
-        self.schedule_df = self.get_schedule_df()
-        print("スケジュールデータを取得しました。")
-        # CSVで保存（rowのindexはFalseに）
-        self.schedule_df.to_csv(self.schedule_path, index=False)
-        print(f"全てのスケジュールを{self.schedule_path}に保存しました。")
+            print(f"スケジュールデータ{self.schedule_path}が存在しません。update_database.pyを実行してください。")
 
     def main(self):
         # オプションで文字列が指定されていたら、日時に関わらず指定した文字列がタイトルに含まれるような映画を表示
@@ -140,23 +116,6 @@ class Scheduler():
         # その他の場合は、指定した映画館の指定した日付の上映情報を表示
         else:           
             self.print_todays_movie()
-
-    def get_schedule_df(self):
-        df_list = []
-
-        for data_manager in self.data_manager_dict.values():
-            df = data_manager.get_df()
-            df_list.append(df)
-
-        # データフレームを縦に結合
-        df_merged = pd.concat(df_list, axis=0)
-
-        # 開始日時でソート
-        df_sorted = df_merged.sort_values(by='開始日時')
-
-        schedule_df = df_sorted
-
-        return schedule_df
 
     def _get_schedule_data_from_row(self, row):
         """
@@ -182,14 +141,12 @@ class Scheduler():
         """
 
         # 映画館の辞書を取得
-        data_manager = self.data_manager_dict[schedule_theater_class_name]
-        theater_object = data_manager.theater_object
-        theater_data_dict = theater_object.get_dictionary()
+        theater_dict = self.theater_data_dict[schedule_theater_class_name]
 
-        theater_name = theater_data_dict["theater_name"] # !
+        theater_name = theater_dict["theater_name"] # !
 
         # プログラムタイトル
-        programs_dict = theater_object.get_programs_dict()
+        programs_dict = theater_dict["programs"]
         program_dict = programs_dict[schedule_program_id] 
         program_title = program_dict["program_title"] # !
 
@@ -260,16 +217,13 @@ class Scheduler():
         # スケジュールデータフレームを一行ずつ見ていく
 
         # 映画館ごとに上映中のプログラムの映画一覧を表示
-        # TODO: 上映日時の最後のやつが過ぎてるやつはグレーにする
         for theater_to_be_displayed in self.theaters_to_be_displayed:
             # 映画館の辞書を取得
-            data_manager = self.data_manager_dict[theater_to_be_displayed]
-            theater_object = data_manager.theater_object
-            theater_data_dict = theater_object.get_dictionary()
-            theater_name = theater_data_dict["theater_name"] # !
+            theater_dict = self.theater_data_dict[theater_to_be_displayed]
+            theater_name = theater_dict["theater_name"] # !
 
             # プログラムタイトル
-            programs_dict = theater_object.get_programs_dict()
+            programs_dict = theater_dict["programs"]
             
             today = date.today()
             
