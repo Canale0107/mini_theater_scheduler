@@ -1,15 +1,11 @@
-import os
 import re
 import json
 import pandas as pd
 from datetime import date, datetime, timedelta
 from theater_class import Theater, Program, Movie
-# from jinbocho_theater import Jinbocho_Theater # for debug
-# from cinemavera_shibuya import Cinemavera_Shibuya # for debug
-
-from conf import settings
 
 from lib import kugiri
+from conf import settings
 
 class Data_Manager():
     """
