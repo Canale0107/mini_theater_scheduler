@@ -1,0 +1,59 @@
+<!-- 参考: https://tercel-tech.hatenablog.com/entry/2019/07/06/190452 -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="../static/schedule_style.css">
+  </head>
+  <body>
+    <h1>{{date}}の上映情報</h1>
+
+    <div class="lead">テスト</div>
+
+    <div class="container">
+      <!-- チャンネル名 -->
+      {% for channel_title in channel_titles %}
+        <div class="channel_title" style="grid-column: {{ 2 + 2 * (loop.index0) }} / span 2;">
+            {{ channel_title }}
+        </div>
+      {% endfor %}
+
+      <!-- 24時間の色 -->
+      {% 
+        set colors = [
+          '#0041b0', '#0041b0', '#0041b0', 
+          '#2ec8d9', '#2ec8d9', '#2ec8d9', '#2ec8d9', '#2ec8d9', '#2ec8d9', '#2ec8d9', '#2ec8d9', 
+          '#2ab9fb', '#2ab9fb', '#2ab9fb', '#2ab9fb', '#2ab9fb', '#2ab9fb', 
+          '#0f80d3', '#0f80d3', '#0f80d3', '#0f80d3', '#0f80d3', 
+          '#0041b0'] 
+      %}
+
+      <!-- 時間軸 -->
+      {% for time in times %}
+        <div class="time-axis" style="grid-row: {{ 2 + 60 * (loop.index0) }} / span 60; background-color: {{ colors[time-1] }};">
+            {{ time|string }}
+        </div>
+      {% endfor %}
+
+      <!-- チャンネルごとにテレビ番組を表示 -->
+      {% for channel_title in channel_titles%}
+        {% set outer_loop = loop %}
+        <!-- テレビ番組を表示 -->
+        {% for program in schedule_dict[channel_title|string].values() %}
+          {% set start_hour = program['start_hour'] %}
+          {% set start_min = program['start_min'] %}
+          {% set duration_min = program['duration'] %}
+            <div class="content-box" style="grid-row: {{2+start_min+60*(start_hour-times[0])}} / span {{ duration_min }}; grid-column: {{ 2 + 2 * outer_loop.index0 }} / span 2;"></div>
+            <div class="content-minute" style="grid-row: {{2+start_min+60*(start_hour-times[0])}} / span 3; grid-column: {{ 2 + 2 * outer_loop.index0 }}; background-color: {{ colors[start_hour-1] }}"> {{ "%02d" % start_min }} </div>
+            <div class="content-minute" style="grid-row: {{2+start_min+60*(start_hour-times[0])}} / span {{ duration_min - 3}}; grid-column: {{ 2 + 2 * outer_loop.index0 }};}}"> </div>
+            <div class="content-title" style="grid-row: {{2+start_min+60*(start_hour-times[0])}} / span {{ duration_min }}; grid-column: {{ 3 + 2 * outer_loop.index0 }};">
+              {{ program['title'] }}
+              <div class="content-discription">
+                {{ program['discription'] }}
+              </div>
+            </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+    
+  </body>
+</html>

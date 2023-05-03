@@ -1,0 +1,130 @@
+body {
+    color: dimgray;
+    font-size: 0.8rem;
+    font-family: "M PLUS Rounded 1c";
+}
+
+h1 {
+  font-size: 1rem;
+}
+
+.lead {
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.container {
+  /* grid レイアウトの設定 */
+  display: grid;
+  grid-template-columns: max-content repeat(3, max-content minmax(120px, 1fr));
+  grid-template-rows: max-content repeat(calc(4 * 60), 0.2rem);
+
+  /* カラムの間隔 */
+  grid-column-gap: 3px;
+  column-gap: 3px;
+
+  /* 行の間隔 */
+  grid-row-gap: 3px;
+  row-gap: 3px;
+}
+
+/* 時間軸 */
+.time-axis {
+  border: solid 1px gray;
+  border-radius: 3px;
+
+  /* background-color: gainsboro;*/
+  color: white;
+
+  grid-column: 1 / 2;
+
+  /* 時間軸の文字の大きさを指定 */
+  font-size: 1.1rem;
+  /* 時間軸の幅を設定 */
+  width: 1.8rem; 
+
+  /* 中央揃えにする */
+  /* text-align: center; */
+  /* 縦も中央揃えにする場合は、上の１行の代わりに下の３行を用いる */ 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* チャンネル名 */
+.channel_title {
+  /* 枠 */
+  border: solid 1px gray;
+  border-radius: 3px;
+
+  /* 背景色 */
+  background-color: lightgray;
+
+  /* 中央揃え・太字 */
+  text-align: center;
+  font-weight: bold;
+
+  /* 表示位置を固定 */
+  top: 0;
+  z-index: 2;
+  position: sticky;
+
+  grid-row: 1 / 2;
+
+  /* 時間軸の文字の大きさを指定 */
+  font-size: 1.1rem;
+  /* 時間軸の幅を設定 */
+  height: 1.8rem; 
+}
+
+/* 番組の枠 */
+.content-box {
+  border: solid 1px gray;
+  border-radius: 3px;
+}
+
+/* 番組の枠（上なしバージョン） */
+.content-box-break-top {
+  border-top: none;
+  border-bottom: solid 1px gray;
+  border-left: solid 1px gray;
+  border-right: solid 1px gray;
+
+  border-radius: 3px;
+}
+
+/* 番組の枠（下なしバージョン） */
+.content-box-break-bottom {
+  border-bottom: none;
+  border-top: solid 1px gray;
+  border-left: solid 1px gray;
+  border-right: solid 1px gray;
+
+  border-radius: 3px;
+}
+
+/* 放送開始時間 */
+.content-minute {
+  margin-left: 3px;
+  color: white;
+  overflow: hidden;
+  /* 時間軸の文字の大きさを指定 */
+  font-size: 0.9rem;
+  /* 幅を設定 */
+  width: 1.1rem; 
+  /* 中央揃えにする */
+  text-align: center;
+}
+
+/* 番組名 */
+.content-title {
+  overflow-wrap: break-word;
+  overflow: hidden;
+}
+
+/* 番組内容 */
+.content-discription {
+  margin-top: 3px;
+  color: darkgray;
+}
