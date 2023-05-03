@@ -922,7 +922,6 @@ class National_Film_Archive(Theater):
         # 上映時間のところに"計"が含まれているかどうかで判別
         # あと今は小ホールだけっぽいが、いずれ大ホールが復活する、小ホールと大ホールは別の映画館として扱う方がいい？
         # TheaterオブジェクトにScreenクラスを設けた方がいいかもしれない？
-        if 
 
         movie_id, movie_title = self._get_movie_id_and_title(movie_tag)
         movie_url = self._get_movie_url(program_movie_list_url, movie_id)
