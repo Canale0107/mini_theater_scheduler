@@ -356,8 +356,6 @@ class Jinbocho_Theater(Theater):
 
         return soup
 
-# TODO: どこで時間がかかっているのか特定する
-
 class Cinemavera_Shibuya(Theater):
     def __init__(self):
         super().__init__()
@@ -764,6 +762,332 @@ class Cinemavera_Shibuya(Theater):
 
         return soup
 
-if __name__ == "__main__":
-    jinbocho_theater = Cinemavera_Shibuya()
+class National_Film_Archive(Theater):
+    def __init__(self):
+        super().__init__()
+
+    def scrape_to_be_informed_theater_object(self):
+        """
+        自分に情報を詰めるために、Webスクレイピングを行う
+        このメソッドは映画館ごとに設計する必要がある
+        """
+        # self.theater_location = self._get_theater_location()
+        # それぞれのプログラムページからの情報を集める
+        program_urls = self._get_program_urls()
+        program_object_list = self._get_program_object_list(program_urls)
+        self.program_object_list = program_object_list
     
+    # 以下、この映画館のホームページに特化したプライベートメソッド
+    def _get_program_urls(self):
+        """
+        メインページから、上映プログラムのURLを取得する
+        """
+
+        main_page_soup = self._get_soup(self.theater_url)
+
+        # <div class="link_all">タグを取得
+        screening_link = main_page_soup.find("h1", text="開催中の上映").find_next("a")["href"]
+
+        program_urls = [screening_link]
+
+        print(f'program_urls = {program_urls}')
+        
+        return program_urls
+
+    def _get_program_object_list(self, program_urls):
+        """
+        program_objectを、プログラムの数分集めたリストを取得する
+        """
+        program_object_list = []
+        for program_url in program_urls:
+
+            program_object = self._get_program_object(program_url)
+            program_object_list.append(program_object)
+
+        return program_object_list
+
+    def _get_program_object(self, program_url):
+        """
+        program_urlのprogram_objectを取得する
+        """
+
+        # プログラムIDを取得
+        program_id = self._get_program_id(program_url)
+
+        # プログラムのタイトルを取得
+        program_soup = self._get_soup(program_url)
+        program_title = self._get_program_title(program_soup)
+
+        # プログラムの上映期間を取得
+        program_duration = self._get_program_duration(program_soup)
+
+        # プログラムの上映映画一覧ページのURLを取得
+        program_movie_list_url = self._get_program_movie_list_url(program_url)
+
+        # プログラム内の映画オブジェクトのリストを取得
+        movie_object_list = self._get_movie_object_list(program_movie_list_url, program_duration)
+
+        program_object = Program(program_id = program_id, 
+                                program_title = program_title, 
+                                program_duration=program_duration,  
+                                program_url = program_url,
+                                program_movie_list_url = program_movie_list_url, 
+                                movie_object_list = movie_object_list)
+
+        return program_object
+
+    def _get_program_id(self, program_url):
+        pattern = r"/(\w+)/$"
+        match = re.search(pattern, program_url)
+        if match:
+            program_id = match.group(1)
+        else:
+            program_id = "unknown"
+        print(f"program_id = {program_id}") # for debug
+        return program_id
+
+    def _get_program_title(self, program_soup):
+        """
+        タイトルがh3タグに囲まれていることを仮定
+        """
+        title_text = program_soup.title.string
+        program_title = title_text.split(" | ")[0]
+
+        print(f'program_title = {program_title}') # for debug
+        return program_title
+
+    def _get_program_duration(self, program_soup):
+        """
+        プログラムの上映期間を取得
+        """
+
+        # 正規表現パターンを定義する
+        pattern = r"(\d{4}).(\d{1,2}).(\d{1,2}) - (\d{4})?.?(\d{1,2})?.?(\d{1,2})?"
+
+        # HTMLから日付を取得する
+        schedule = program_soup.find("div", class_="clearfix mb10").text
+        # 正規表現で日付を取得する
+        program_date_matches = re.search(pattern, schedule)
+
+        program_start_year = int(program_date_matches.group(1))
+        program_start_month = int(program_date_matches.group(2)) if program_date_matches.group(2) is not None else 1
+        program_start_day = int(program_date_matches.group(3)) if program_date_matches.group(3) is not None else 1
+
+        program_end_year = int(program_date_matches.group(4)) if program_date_matches.group(4) is not None else program_start_year
+        program_end_month = int(program_date_matches.group(5)) if program_date_matches.group(5) is not None else program_start_month
+        program_end_day = int(program_date_matches.group(6)) if program_date_matches.group(6) is not None else program_start_day
+
+        program_start_ymd = datetime(program_start_year, program_start_month, program_start_day).date()
+        program_end_ymd = datetime(program_end_year, program_end_month, program_end_day).date()
+
+        program_start_ymd_str = program_start_ymd.strftime("%Y-%m-%d")
+        program_end_ymd_str = program_end_ymd.strftime("%Y-%m-%d")
+
+        program_duration_dict = {"start": program_start_ymd_str, "end": program_end_ymd_str}
+
+        print(program_duration_dict) # for debug
+
+        return program_duration_dict
+    
+    def _get_program_movie_list_url(self, program_url):
+        """
+        プログラムIDに_listをつけるとプログラムの映画一覧ページのURLになることを仮定し、プログラムの映画一覧ページのURLを取得
+        """
+
+        program_movie_list_url = program_url
+        
+        return program_movie_list_url
+
+    def _get_movie_object_list(self, program_movie_list_url, program_duration):
+        movie_object_list = []
+        program_movie_list_soup = self._get_soup(program_movie_list_url)
+        movie_tags = self._get_movie_tags(program_movie_list_soup)
+        for movie_tag in movie_tags:
+
+            movie_object = self._get_movie_object(program_movie_list_url, program_duration, movie_tag)
+            movie_object_list.append(movie_object)
+
+        return movie_object_list
+
+    def _get_movie_tags(self, program_movie_list_soup):
+
+        movie_tags = program_movie_list_soup.find_all('span', {"class": "ev-fc-no momat-bg-white momat-bd-muted"})
+
+        return movie_tags
+
+    def _get_movie_object(self, program_movie_list_url, program_duration , movie_tag):
+        # NFAJでは１つの上映で二つ以上の映画を上映することがあるらしい、その扱いをどうするか
+        # それぞれを1つの映画として扱い、上映時間はうまく計算するのがいい
+        # まずはそれを判別しなければならない
+        # 上映時間のところに"計"が含まれているかどうかで判別
+        # あと今は小ホールだけっぽいが、いずれ大ホールが復活する、小ホールと大ホールは別の映画館として扱う方がいい？
+        # TheaterオブジェクトにScreenクラスを設けた方がいいかもしれない？
+        if 
+
+        movie_id, movie_title = self._get_movie_id_and_title(movie_tag)
+        movie_url = self._get_movie_url(program_movie_list_url, movie_id)
+
+        # print(movie_title) # for debug
+
+        # 映画のメタ情報を取得
+        type_tag, cast_tag, synopsis_tag = movie_tag.find_all("p", {"class": "data2_text"})
+
+        # 映画タイプを取得
+        movie_type = self._get_movie_type(type_tag)
+
+        # キャストを取得
+        cast_dict = self._get_cast_dict(cast_tag)
+
+        # あらすじを取得
+        movie_synopsis = self._get_synopsis(synopsis_tag)
+
+        # 映画の上映時間を取得
+        movie_timedelta_minute_str = self._get_movie_timedelta_minute_str(type_tag)
+
+        # 上映開始日時のリストを取得
+        movie_start_datetime_str_list = self._get_movie_start_datetime_str_list(program_duration, movie_tag)
+            
+        # Movieクラスのオブジェクトを作成。これをリスト化して、programオブジェクトに渡す
+        movie_object = Movie(movie_title = movie_title, 
+                            movie_id = movie_id, 
+                            movie_url = movie_url,
+                            movie_timedelta_minute_str = movie_timedelta_minute_str, 
+                            movie_type = movie_type, 
+                            movie_staff = cast_dict, 
+                            movie_synopsis = movie_synopsis, 
+                            movie_start_datetime_str_list = movie_start_datetime_str_list)
+
+        return movie_object
+
+    def _get_movie_type(self, type_tag):
+        """
+        映画タイプを取得
+        神保町シアターの場合、
+            制作年/製作会社/白黒orカラー/上映時間
+        などの情報
+        """
+
+        movie_type_list = type_tag.text.split(u'\uff0f') # 全角スラッシュで区切られていることを仮定
+        movie_type = "/".join(movie_type_list[:-1]) # 上映時間は除く(DRY)
+
+        return movie_type
+
+    def _get_cast_dict(self, cast_tag):
+        """
+        キャストの辞書を取得
+        """
+        cast_list = cast_tag.text.lstrip("■").split("■")
+        cast_dict = {}
+        for cast in cast_list:
+            work, name = cast.split(u'\uff1a', 1) # 全角コロンでsplit
+            cast_dict[work] = name
+
+        return cast_dict
+    
+    def _get_synopsis(self, synopsis_tag):
+        """
+        あらすじを取得
+        """
+        synopsis = synopsis_tag.text
+        return synopsis
+
+    def _get_movie_start_datetime_str_list(self, program_duration, movie_tag):
+        """
+        上映開始日時のリストを取得
+        """
+        schedule_text = movie_tag.find("p", {"class": "data2_sche"}).text
+
+        movie_start_datetime_str_list = [] # 特定の映画の{"start": 上映開始日時, "end": 上映終了日時)を格納するリストを初期化
+        for line in schedule_text.split("\n"):
+
+            match = re.search(r"(\d+)月(\d+)日（.+）(\d+):(\d+)", line)
+            if match:
+                month_str, day_str, time_hour_str, time_minute_str = match.groups()
+                month = int(month_str)
+                day = int(day_str)
+
+                # 年はプログラムの上映期間から取得
+                program_start_ymd_str = program_duration["start"]
+                program_start_year = datetime.strptime(program_start_ymd_str, '%Y-%m-%d').year
+                program_start_month = datetime.strptime(program_start_ymd_str, '%Y-%m-%d').month
+
+                # 年を跨ぐプログラムに対応
+                # 映画の上映月がプログラムの開始月より小さければ、映画の上映年はプログラムの開始年に+1したものにする
+                if month < program_start_month:
+                    year = program_start_year + 1
+                else:
+                    year = program_start_year
+
+                # 上映開始時間
+                movie_start_datetime = datetime(year, month, day, int(time_hour_str), int(time_minute_str))
+
+                movie_start_datetime_str = movie_start_datetime.strftime("%Y-%m-%d %H:%M")
+
+                movie_start_datetime_str_list.append(movie_start_datetime_str)
+
+        return movie_start_datetime_str_list
+    
+    def _format_timedelta(self, timedelta):
+        total_sec = timedelta.total_seconds()
+        
+        minutes = total_sec // 60
+
+        # total time
+        return f'{int(minutes)}分'
+
+    def _get_movie_timedelta_minute_str(self, type_tag):
+        type_text = type_tag.text
+        # 上映時間を取得
+        timedelta_hour_match = re.search(r'(\d+)時間', type_text)
+        movie_timedelta_hour = timedelta(hours = 0)
+        timedelta_minute_match = re.search(r'(\d+)分', type_text)
+        movie_timedelta_minute = timedelta(minutes = 0)
+
+        if timedelta_hour_match:
+            movie_hour = int(timedelta_hour_match.group(1))
+            movie_timedelta_hour += timedelta(hours = movie_hour)
+        if timedelta_minute_match:
+            movie_minute = int(timedelta_minute_match.group(1))
+            movie_timedelta_minute += timedelta(minutes = movie_minute)
+            
+        movie_timedelta = movie_timedelta_hour + movie_timedelta_minute
+
+        movie_timedelta_minute_str = self._format_timedelta(movie_timedelta)
+
+        return movie_timedelta_minute_str
+    
+    def _get_movie_id_and_title(self, movie_tag):
+        # 映画のタイトルを取得
+        movie_title_with_number = movie_tag.find("div", {"class": "data2_title"}).text.replace("\n", "").replace("\t", "")
+        # タイトル内のスペースを半角スペースに置換
+        movie_title_with_number = re.sub(r'\xa0+', ' ', movie_title_with_number)
+
+        # 映画のIDとタイトルを取得
+        title_match = re.match(r"(\d+)[.]\s+(.*)", movie_title_with_number)
+        if title_match:
+            movie_id = title_match.group(1)
+            movie_title = title_match.group(2)
+
+        return movie_id, movie_title
+
+    def _get_movie_url(self, program_movie_list_url, movie_id):
+
+        movie_url = f'{program_movie_list_url}#movie{movie_id.zfill(2)}'
+
+        return movie_url
+
+    def _get_soup(self, url):
+
+        # URLからHTMLを取得
+        response = requests.get(url)
+        # エンコーディングを自動で判定し、文字コードを設定する
+        encoding = response.encoding if 'charset' in response.headers.get('content-type', '').lower() else None
+        response.encoding = encoding
+
+        soup = BeautifulSoup(response.content.decode('utf-8'), "html.parser")
+
+        return soup
+
+if __name__ == "__main__":
+    nfaj = National_Film_Archive()
+    nfaj.scrape_to_be_informed_theater_object()
