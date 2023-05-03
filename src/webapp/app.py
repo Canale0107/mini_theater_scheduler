@@ -38,7 +38,7 @@ def schedule():
         theater_name = theater_settings_dict["THEATER_NAME"]
         theater_name_list.append(theater_name)
 
-    with open('../../data/theater_data_sample/theater_data.json') as f:
+    with open('../../data/theater_data/theater_data.json') as f:
         theater_data = json.load(f)
 
     schedule_dict = {}
@@ -47,7 +47,7 @@ def schedule():
         theater_name = theater_dict["theater_name"]
         schedule_dict[theater_name] = {}
 
-    schedule_df = pd.read_csv('../../data/schedule_sample/all_schedule.csv', dtype=str)
+    schedule_df = pd.read_csv('../../data/schedule/all_schedule.csv', dtype=str)
 
     today = date.today()
 
