@@ -54,8 +54,8 @@ h1 {
 }
 
 
-/* チャンネル名 */
-.channel_title {
+/* 映画館名 */
+.theater_name {
   /* 枠 */
   border: solid 1px gray;
   border-radius: 3px;
@@ -83,6 +83,7 @@ h1 {
 /* 番組の枠 */
 .content-box {
   border: solid 1px gray;
+  background-color: #f6f6ff;
   border-radius: 3px;
 }
 

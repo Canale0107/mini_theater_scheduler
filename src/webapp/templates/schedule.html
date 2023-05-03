@@ -11,9 +11,9 @@
 
     <div class="container">
       <!-- チャンネル名 -->
-      {% for channel_title in channel_titles %}
-        <div class="channel_title" style="grid-column: {{ 2 + 2 * (loop.index0) }} / span 2;">
-            {{ channel_title }}
+      {% for theater_name in theater_names %}
+        <div class="theater_name" style="grid-column: {{ 2 + 2 * (loop.index0) }} / span 2;">
+            {{ theater_name }}
         </div>
       {% endfor %}
 
@@ -35,15 +35,13 @@
       {% endfor %}
 
       <!-- チャンネルごとにテレビ番組を表示 -->
-      {% for channel_title in channel_titles%}
+      {% for theater_name in theater_names%}
         {% set outer_loop = loop %}
         <!-- テレビ番組を表示 -->
-        {% for movie in schedule_dict[channel_title|string].values() %}
+        {% for movie in schedule_dict[theater_name|string].values() %}
           {% set start_hour = movie['start_hour'] %}
           {% set start_min = movie['start_min'] %}
           {% set duration_min = movie['duration'] %}
-          {% set type = movie['type'] %}
-          {% set staff = movie['staff'] %}
             <div class="content-box" style="grid-row: {{2+start_min+60*(start_hour-times[0])}} / span {{ duration_min }}; grid-column: {{ 2 + 2 * outer_loop.index0 }} / span 2;"></div>
             <div class="content-minute" style="grid-row: {{2+start_min+60*(start_hour-times[0])}} / span 3; grid-column: {{ 2 + 2 * outer_loop.index0 }}; background-color: {{ colors[start_hour-1] }}"> {{ "%02d" % start_min }} </div>
             <div class="content-minute" style="grid-row: {{2+start_min+60*(start_hour-times[0])}} / span {{ duration_min - 3}}; grid-column: {{ 2 + 2 * outer_loop.index0 }};}}"> </div>
@@ -51,10 +49,13 @@
               {{ movie['title'] }}（{{ duration_min|string }} 分）
               <div class="content-discription">
                 <p>
-                  {{ type }}
+                  {{ movie['start_end_time']}}
                 </p>
                 <p>
-                  {{ staff }}
+                  {{ movie['type'] }}
+                </p>
+                <p>
+                  {{ movie['staff'] }}
                 </p>
                 <p>
                   {{ movie['discription'] }}
@@ -71,7 +72,7 @@
     <!-- カラム数をデータに合わせて変更 -->
     <script>
       const container = document.querySelector('.container');
-      const numColumns = {{channel_titles|length}}; // 動的に変更するカラム数
+      const numColumns = {{theater_names|length}}; // 動的に変更するカラム数
       container.style.gridTemplateColumns = `max-content repeat(${numColumns}, max-content minmax(120px, 1fr))`;
       const numTimes = {{times|length}};
       container.style.gridTemplateRows = `max-content repeat(${numTimes}, 0.1rem)`;

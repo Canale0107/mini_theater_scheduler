@@ -73,6 +73,7 @@ def schedule():
             movie_url = movie_dict["movie_url"]
             schedule_dict[theater_name][movie_title]={
                     "title": movie_title,
+                    "start_end_time": f'{start_datetime.strftime("%H:%M")}-{end_datetime.strftime("%H:%M")}',
                     "type": movie_type,
                     "staff": "■".join([""]+[f'{work}：{name}' for work, name in movie_staff_dict.items()]),
                     "start_hour": start_datetime.hour,
@@ -84,7 +85,7 @@ def schedule():
 
     return render_template('schedule.html', 
                             date=today.strftime("%Y年%-m月%-d日"),
-                            channel_titles=theater_name_list,
+                            theater_names=theater_name_list,
                             times=range(10, 24),
                             schedule_dict=schedule_dict)
 
