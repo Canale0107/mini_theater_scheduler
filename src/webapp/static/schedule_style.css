@@ -5,7 +5,9 @@ body {
 }
 
 h1 {
-  font-size: 1rem;
+  font-size: 2rem;
+  /* 中央揃えにする */
+  text-align: center;
 }
 
 .lead {
@@ -16,8 +18,8 @@ h1 {
 .container {
   /* grid レイアウトの設定 */
   display: grid;
-  grid-template-columns: max-content repeat(3, max-content minmax(120px, 1fr));
-  grid-template-rows: max-content repeat(calc(4 * 60), 0.2rem);
+  grid-template-columns: max-content repeat(3, max-content minmax(120px, 1fr)); /*ここの3はデータ数に合わせて変更する必要がある*/
+  grid-template-rows: max-content repeat(calc(4 * 60), 0.1rem); /*ここの4はデータ数に合わせて変更する必要がある*/
 
   /* カラムの間隔 */
   grid-column-gap: 3px;
@@ -126,5 +128,19 @@ h1 {
 /* 番組内容 */
 .content-discription {
   margin-top: 3px;
+  margin-right: 10px;
   color: darkgray;
+}
+
+.movie-url {
+  text-align: end;
+}
+.movie-link:link {
+  color: blue;
+}
+.movie-link:visited {
+  color: purple;
+}
+.movie-link:hover {
+  color: orange;
 }
