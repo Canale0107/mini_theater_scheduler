@@ -10,6 +10,15 @@ h1 {
   text-align: center;
 }
 
+.buttons {
+  display: flex;
+  justify-content: center;
+}
+.buttons a {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
 .lead {
   margin-bottom: 0.5rem;
   font-size: 0.8rem;

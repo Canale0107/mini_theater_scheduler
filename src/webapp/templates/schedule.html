@@ -7,7 +7,19 @@
   <body>
     <h1>{{date}}の上映情報</h1>
 
-    <div class="lead">テスト</div>
+    <div class="buttons">
+      <a href="{{ url_for('schedule', request_date=previousday) }}">
+        <img src="{{ url_for('static', filename='images/previous.png') }}" width="30" height="30" alt="前日の上映情報を表示する">
+      </a>
+      <a href="{{ url_for('schedule') }}">
+        <img src="{{ url_for('static', filename='images/home.png') }}" width="30" height="30" alt="今日の上映情報を表示する">
+      </a>
+      <a href="{{ url_for('schedule', request_date=nextday) }}">
+        <img src="{{ url_for('static', filename='images/next.png') }}" width="30" height="30" alt="翌日の上映情報を表示する">
+      </a>
+    </div>
+
+    <!-- <div class="lead">テスト</div> -->
 
     <div class="container">
       <!-- チャンネル名 -->

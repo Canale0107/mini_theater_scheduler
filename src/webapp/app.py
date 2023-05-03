@@ -1,9 +1,9 @@
 from flask import Flask, render_template, jsonify
 import csv, json
 import pandas as pd
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', template_folder='templates')
 
 @app.route('/')
 def index():
@@ -26,7 +26,8 @@ def csv_view():
     return render_template('csv_view.html', data=data)
 
 @app.route('/schedule')
-def schedule():
+@app.route('/schedule/<request_date>')
+def schedule(request_date=None):
 
     # TODO: theater_settings.jsonから読み込む
     with open('../update_database/conf/theaters_settings.json') as f:
@@ -49,7 +50,10 @@ def schedule():
 
     schedule_df = pd.read_csv('../../data/schedule/all_schedule.csv', dtype=str)
 
-    today = date.today()
+    if request_date == None:
+        show_date = date.today()
+    else:
+        show_date = datetime.strptime(request_date, "%Y-%m-%d").date()
 
     for index, row in schedule_df.iterrows():
     # 行ごとの処理
@@ -60,7 +64,7 @@ def schedule():
         end_datetime = datetime.strptime(row['終了日時'], "%Y-%m-%d %H:%M")
         movie_duration = int((end_datetime - start_datetime).total_seconds()/60)
 
-        if start_datetime.date() == today:
+        if start_datetime.date() == show_date:
             theater_dict = theater_data[theater_class_name]
             program_dict = theater_dict["programs"][program_id]
             movie_dict = program_dict["movies"][movie_id]
@@ -84,7 +88,9 @@ def schedule():
                 }
 
     return render_template('schedule.html', 
-                            date=today.strftime("%Y年%-m月%-d日"),
+                            date=show_date.strftime("%Y年%-m月%-d日"),
+                            previousday=(show_date+timedelta(days=-1)).strftime("%Y-%m-%d"),
+                            nextday=(show_date+timedelta(days=1)).strftime("%Y-%m-%d"),
                             theater_names=theater_name_list,
                             times=range(10, 24),
                             schedule_dict=schedule_dict)
