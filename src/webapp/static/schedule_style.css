@@ -1,7 +1,7 @@
 body {
     color: dimgray;
     font-size: 0.8rem;
-    font-family: "M PLUS Rounded 1c";
+    font-family: "Noto Sans JP", sans-serif;
 }
 
 h1 {
@@ -83,7 +83,7 @@ h1 {
 /* 番組の枠 */
 .content-box {
   border: solid 1px gray;
-  background-color: #f6f6ff;
+  background-color: #F9F9FF;
   border-radius: 3px;
 }
 
@@ -140,6 +140,7 @@ h1 {
   overflow-wrap: break-word;
   overflow: hidden;
   font-size: 1.2rem;
+  color: #051F67;
   text-align: left;
 }
 
@@ -147,6 +148,7 @@ h1 {
 .content-start-end {
   text-align: right;
   font-size: 1rem;
+  color: #9fa7b6;
   margin-right: 10px;
   margin-top: 3px;
 }
@@ -155,7 +157,7 @@ h1 {
 .content-discription {
   margin-top: 3px;
   margin-right: 10px;
-  color: #959393;
+  color: #9fa7b6;
   font-size: 1rem;
 }
 
