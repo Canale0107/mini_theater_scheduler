@@ -47,7 +47,10 @@
             <div class="content" style="grid-row: {{2+start_min+60*(start_hour-times[0])}} / span {{ duration_min }}; grid-column: {{ 3 + 2 * outer_loop.index0 }};">
               <div class="content-title-and-start-end">
                 <div class="content-title" >
-                  {{ movie['title'] }}（{{ duration_min|string }} 分）
+                  <a class="movie-link" href="{{movie['url']}}" target="_blank">
+                    {{ movie['title'] }}
+                  </a>
+                  （{{ duration_min|string }} 分）
                 </div>
                 <div class="content-start-end" >
                   {{ movie['start_end_time']}}
@@ -64,9 +67,10 @@
                   {{ movie['discription'] }}
                 </p>
               </div>
-              <div class="movie-url">
+
+              <!--div class="movie-url">
                   <a class="movie-link" href="{{movie['url']}}" target="_blank">映画館ページへ</a>
-              </div>
+              </div-->
             </div>
         {% endfor %}
       {% endfor %}
