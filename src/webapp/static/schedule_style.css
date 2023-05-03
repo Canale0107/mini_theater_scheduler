@@ -46,8 +46,8 @@ h1 {
   width: 1.8rem; 
 
   /* 中央揃えにする */
-  /* text-align: center; */
-  /* 縦も中央揃えにする場合は、上の１行の代わりに下の３行を用いる */ 
+  text-align: center;
+  /* 縦も中央揃えにする*/ 
   display: flex;
   align-items: center;
   justify-content: center;
@@ -113,28 +113,59 @@ h1 {
   color: white;
   overflow: hidden;
   /* 時間軸の文字の大きさを指定 */
-  font-size: 0.9rem;
+  font-size: 1rem;
   /* 幅を設定 */
-  width: 1.1rem; 
+  width: 1.5rem; 
   /* 中央揃えにする */
   text-align: center;
+  /* 縦も中央揃えにする*/ 
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* 番組名 */
+/* 映画 */
+.content {
+  display: flex;
+  flex-direction: column;
+}
+
+.content-title-and-start-end {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* 映画タイトル */
 .content-title {
   overflow-wrap: break-word;
   overflow: hidden;
+  font-size: 1.2rem;
+  text-align: left;
+}
+
+/* 上映時間 */
+.content-start-end {
+  text-align: right;
+  font-size: 1rem;
+  margin-right: 10px;
+  margin-top: 3px;
 }
 
 /* 番組内容 */
 .content-discription {
   margin-top: 3px;
   margin-right: 10px;
-  color: darkgray;
+  color: #959393;
+  font-size: 1rem;
 }
 
 .movie-url {
   text-align: end;
+  text-align: bottom;
+  font-size: 1rem;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  margin-top: auto;
 }
 .movie-link:link {
   color: blue;

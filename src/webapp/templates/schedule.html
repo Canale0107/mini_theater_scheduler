@@ -20,11 +20,11 @@
       <!-- 24時間の色 -->
       {% 
         set colors = [
-          '#0041b0', '#0041b0', '#0041b0', 
-          '#2ec8d9', '#2ec8d9', '#2ec8d9', '#2ec8d9', '#2ec8d9', '#2ec8d9', '#2ec8d9', '#2ec8d9', 
-          '#2ab9fb', '#2ab9fb', '#2ab9fb', '#2ab9fb', '#2ab9fb', '#2ab9fb', 
-          '#0f80d3', '#0f80d3', '#0f80d3', '#0f80d3', '#0f80d3', 
-          '#0041b0'] 
+          '#2729A5', '#1839AD', '#064DA3', 
+          '#006685', '#007B7D', '#00936E', '#00A646', '#0BB42B', '#19C014', '#3FCD10', '#61DA00', 
+          '#9CE100', '#E0D300', '#FFB51F', '#FF8F40', '#FF6A42', '#F74040', 
+          '#E82650', '#D01975', '#B71994', '#9A1DA7', '#8416C3', '#621BBC',
+          '#4425AF'] 
       %}
 
       <!-- 時間軸 -->
@@ -34,23 +34,26 @@
         </div>
       {% endfor %}
 
-      <!-- チャンネルごとにテレビ番組を表示 -->
+      <!-- 映画館ごとに映画を表示 -->
       {% for theater_name in theater_names%}
         {% set outer_loop = loop %}
-        <!-- テレビ番組を表示 -->
+        <!-- 映画を表示 -->
         {% for movie in schedule_dict[theater_name|string].values() %}
           {% set start_hour = movie['start_hour'] %}
           {% set start_min = movie['start_min'] %}
           {% set duration_min = movie['duration'] %}
             <div class="content-box" style="grid-row: {{2+start_min+60*(start_hour-times[0])}} / span {{ duration_min }}; grid-column: {{ 2 + 2 * outer_loop.index0 }} / span 2;"></div>
-            <div class="content-minute" style="grid-row: {{2+start_min+60*(start_hour-times[0])}} / span 3; grid-column: {{ 2 + 2 * outer_loop.index0 }}; background-color: {{ colors[start_hour-1] }}"> {{ "%02d" % start_min }} </div>
-            <div class="content-minute" style="grid-row: {{2+start_min+60*(start_hour-times[0])}} / span {{ duration_min - 3}}; grid-column: {{ 2 + 2 * outer_loop.index0 }};}}"> </div>
-            <div class="content-title" style="grid-row: {{2+start_min+60*(start_hour-times[0])}} / span {{ duration_min }}; grid-column: {{ 3 + 2 * outer_loop.index0 }};">
-              {{ movie['title'] }}（{{ duration_min|string }} 分）
-              <div class="content-discription">
-                <p>
+            <div class="content-minute" style="grid-row: {{2+start_min+60*(start_hour-times[0])}}; grid-column: {{ 2 + 2 * outer_loop.index0 }}; background-color: {{ colors[start_hour-1] }}"> {{ "%02d" % start_min }} </div>
+            <div class="content" style="grid-row: {{2+start_min+60*(start_hour-times[0])}} / span {{ duration_min }}; grid-column: {{ 3 + 2 * outer_loop.index0 }};">
+              <div class="content-title-and-start-end">
+                <div class="content-title" >
+                  {{ movie['title'] }}（{{ duration_min|string }} 分）
+                </div>
+                <div class="content-start-end" >
                   {{ movie['start_end_time']}}
-                </p>
+                </div>
+              </div>
+              <div class="content-discription">
                 <p>
                   {{ movie['type'] }}
                 </p>
@@ -60,9 +63,9 @@
                 <p>
                   {{ movie['discription'] }}
                 </p>
-                <p class="movie-url">
-                  <a class="movie-link" href="{{movie['url']}}">映画館ページへ</a>
-                </p>
+              </div>
+              <div class="movie-url">
+                  <a class="movie-link" href="{{movie['url']}}" target="_blank">映画館ページへ</a>
               </div>
             </div>
         {% endfor %}
