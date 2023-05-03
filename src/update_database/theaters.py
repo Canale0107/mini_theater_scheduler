@@ -6,6 +6,7 @@ from datetime import date, datetime, timedelta
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlsplit, urlunsplit
 from theater_class import Theater, Program, Movie
+import Levenshtein
 
 # TODO: 各映画館クラスを一つのファイルにする
 
@@ -485,8 +486,10 @@ class Cinemavera_Shibuya(Theater):
 
         for movie_tag in movie_tags:
             
-            movie_object = self._get_movie_object(program_movie_list_url, schedule_tag, program_duration, movie_tag)
+            movie_object = self._get_movie_object(program_movie_list_url, movie_tag)
             movie_object_list.append(movie_object)
+
+        self._get_movie_start_datetime_str_list(schedule_tag, program_duration, movie_object_list)
 
         return movie_object_list
 
@@ -496,7 +499,7 @@ class Cinemavera_Shibuya(Theater):
 
         return movie_tags
 
-    def _get_movie_object(self, program_movie_list_url, schedule_tag, program_duration, movie_tag):
+    def _get_movie_object(self, program_movie_list_url, movie_tag):
 
         movie_id, movie_title, other_info = self._get_movie_id_and_title(movie_tag)
         movie_url = self._get_movie_url(program_movie_list_url, movie_id)
@@ -516,9 +519,6 @@ class Cinemavera_Shibuya(Theater):
 
         # 映画の上映時間を取得
         movie_timedelta_minute_str = self._get_movie_timedelta_minute_str(movie_tag)
-
-        # 上映開始日時のリストを取得
-        movie_start_datetime_str_list = self._get_movie_start_datetime_str_list(movie_tag, schedule_tag, program_duration, movie_title)
             
         # Movieクラスのオブジェクトを作成。これをリスト化して、programオブジェクトに渡す
         movie_object = Movie(movie_title = movie_title, 
@@ -527,8 +527,7 @@ class Cinemavera_Shibuya(Theater):
                             movie_timedelta_minute_str = movie_timedelta_minute_str, 
                             movie_type = movie_type, 
                             movie_staff = cast_dict, 
-                            movie_synopsis = movie_synopsis, 
-                            movie_start_datetime_str_list = movie_start_datetime_str_list)
+                            movie_synopsis = movie_synopsis)
 
         return movie_object
 
@@ -607,17 +606,15 @@ class Cinemavera_Shibuya(Theater):
 
         return synopsis
 
-    # TODO: 高速化の余地あり
-    def _get_movie_start_datetime_str_list(self, movie_tag, schedule_tag, program_duration, movie_title):
+    def _get_movie_start_datetime_str_list(self, schedule_tag, program_duration, movie_object_list):
         """
         上映開始日時のリストを取得
-        スケジュールがたまに誤字ってることがある
-        TODO: ->レーベンシュタイン距離が最も近いものを採用する
+        スケジュールがたまに誤字ってることがあるので、その場合はレーベンシュタイン距離が最も近いものを採用する
         例：
-        正：「太陽は光り輝く」　誤：「太陽は光輝く」
-        TODO: 表を見るのを一回にする、今は映画ごとに以下のfor文を回していて、非効率
+            正：「太陽は光り輝く」　誤：「太陽は光輝く」
+            正：「栄光何するものぞ」　誤：「栄光なにするものぞ」
+        半角カッコと全角カッコも入り乱れている
         """
-
         rows = schedule_tag.find_all('tr')
 
         # 月の初期値をNoneに設定
@@ -670,11 +667,37 @@ class Cinemavera_Shibuya(Theater):
                     movie_start_datetime = datetime(year, month, date, hour, minute)
                     movie_start_datetime_str = movie_start_datetime.strftime("%Y-%m-%d %H:%M")
                     
-                    # 洋画の場合、邦題の後にスペースを空けて原題が入るが、スケジュールには邦題しか乗らないので、その対策。
-                    if movie_title.split(" ")[0] in film_text:
-                        movie_start_datetime_str_list.append(movie_start_datetime_str)
+                    if film_text != "" and film_text != "\n":
+                        is_matched = False
+                        for movie_object in movie_object_list:
+                            # 洋画の場合、邦題の後にスペースを空けて原題が入るが、スケジュールには邦題しか乗らないので、その対策。
+                            if movie_object.movie_title.split(" ")[0] in film_text:
+                                # print(f"タイトル一致 {movie_object.movie_title}, {film_text}") ## for debug
+                                movie_object.movie_start_datetime_str_list.append(movie_start_datetime_str)
+                                is_matched = True
+                                break
 
-        return movie_start_datetime_str_list
+                        if not is_matched:
+                    
+                            # 一致する映画が一つも見つからなかった場合
+                            # print(f"タイトル不一致 {movie_object.movie_title}") ## for debug
+                    
+                            target_string = film_text.split(" ")[0]
+                            # print(f'target_string = {target_string}')
+                            min_distance = len(target_string)  # 初期値として、最大距離を指定
+                            closest_object = None
+                            for movie_object in movie_object_list:
+                                distance = Levenshtein.distance(target_string, movie_object.movie_title.split(" ")[0])
+                                if distance < min_distance:
+                                    min_distance = distance
+                                    closest_object = movie_object
+                                    # print(f'closest_title = {closest_object.movie_title.split(" ")[0]}')
+                            
+                            if closest_object:
+                                # これでMovie_objectにちゃんと登録される？
+                                closest_object.movie_start_datetime_str_list.append(movie_start_datetime_str)
+                            else:
+                                print(f"正しく読み取れませんでした：{target_string}")
 
     def _format_timedelta(self, timedelta):
         total_sec = timedelta.total_seconds()
@@ -715,7 +738,7 @@ class Cinemavera_Shibuya(Theater):
             movie_title = match.group(1)
 
         # movie_title_with_numberに”／サイレント"が含まれることがある
-        match = re.search(r'『／(.*)）', movie_title_with_timedelta)
+        match = re.search(r'／(.*)）』', movie_title_with_timedelta)
         if match:
             other_info = match.group(1)
         else:
