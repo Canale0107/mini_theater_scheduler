@@ -8,11 +8,21 @@ h1 {
   font-size: 2rem;
   /* 中央揃えにする */
   text-align: center;
+  background-color: white;
+    /* 表示位置を固定 */
+    top: 0;
+    z-index: 10;
+    position: sticky;
 }
 
 .buttons {
+  background-color: white;
   display: flex;
   justify-content: center;
+  /* 表示位置を固定 */
+  top: calc(2rem + 15px); /* h1の高さ + マージン */
+  z-index: 11;
+  position: sticky;
 }
 .buttons a {
   margin-left: 10px;
@@ -77,8 +87,8 @@ h1 {
   font-weight: bold;
 
   /* 表示位置を固定 */
-  top: 0;
-  z-index: 2;
+  top: calc(2rem + 15px + 30px + 3px); /* h1の高さ + マージン + ボタンの高さ + マージン*/
+  z-index: 10;
   position: sticky;
 
   grid-row: 1 / 2;
