@@ -4,12 +4,12 @@ from . import jinbocho_theater_util
 __all__ = ['JinbochoTheaterScraper']
 
 class JinbochoTheaterScraper(ScraperInterface):
-    def __init__(self, base_url):
-        self.base_url = base_url
+    def __init__(self, theater_url):
+        self.theater_url = theater_url
 
     def scrape_programs(self):
 
-        programs = jinbocho_theater_util.get_programs(self.base_url)
+        programs = jinbocho_theater_util.get_programs(self.theater_url)
         return programs
 
     def scrape_movies(self, program_url):

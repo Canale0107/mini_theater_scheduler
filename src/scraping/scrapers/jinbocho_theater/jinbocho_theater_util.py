@@ -1,9 +1,28 @@
 import re
 from datetime import datetime, timedelta
 from urllib.parse import urljoin
-from .util import get_soup, get_program_movie_list_url
+from bs4 import BeautifulSoup
+import requests
 
 __all__ = ['get_movies', 'get_movie_schedules']
+
+# TODO:テストができるように、引数をBeautifulSoupオブジェクトにする
+
+def get_soup(url):
+    response = requests.get(url)
+    response.encoding = "Shift_JIS" 
+    html_text = response.text
+    soup = BeautifulSoup(html_text, "html.parser")
+    return soup
+
+def get_program_movie_list_url(program_url):
+    """
+    プログラムIDに_listをつけるとプログラムの映画一覧ページのURLになることを仮定し、プログラムの映画一覧ページのURLを取得
+    """
+
+    program_movie_list_url = program_url.replace(".html", "_list.html")
+    
+    return program_movie_list_url
 
 def get_program_urls(theater_url):
     """
@@ -19,16 +38,6 @@ def get_program_urls(theater_url):
         program_urls.append(urljoin(theater_url, a_tag["href"]))
 
     return program_urls
-
-def get_program_id(program_url):
-    """
-    program_urlから、program_idを取得して返す
-    """
-    start_idx = program_url.index("program/") + len("program/")
-    end_idx = program_url.index(".html")
-    program_id = program_url[start_idx:end_idx]
-
-    return program_id
 
 def get_program_title(program_url):
     """
@@ -100,10 +109,8 @@ def get_program_duration(program_url):
     return program_duration_dict
 
 
-
 def _get_program(program_url):
 
-    # program_id = get_program_id(program_url)
     program_title = get_program_title(program_url)
     program_duration = get_program_duration(program_url)
     program_movie_list_url = get_program_movie_list_url(program_url)
@@ -115,7 +122,6 @@ def _get_program(program_url):
         'program_url': program_url,
         'program_movie_list_url': program_movie_list_url,
     }
-
 
 
 def get_programs(theater_url):

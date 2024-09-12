@@ -4,12 +4,12 @@ from . import national_film_archive_util
 __all__ = ['NationalFilmArchiveScraper']
 
 class NationalFilmArchiveScraper(ScraperInterface):
-    def __init__(self, base_url):
-        self.base_url = base_url
+    def __init__(self, theater_url):
+        self.theater_url = theater_url
 
     def scrape_programs(self):
 
-        programs = national_film_archive_util.get_programs(self.base_url)
+        programs = national_film_archive_util.get_programs(self.theater_url)
         return programs
 
     def scrape_movies(self, program_url):

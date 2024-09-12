@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 class ScraperInterface(ABC):
     @abstractmethod
-    def scrape_programs(self):
+    def scrape_programs(self, theater_url):
         """
         プログラム情報をスクレイピングする抽象メソッド。
         各映画館のスクレイピングクラスで実装する必要がある。
