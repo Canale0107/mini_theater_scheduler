@@ -1,26 +1,12 @@
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 from urllib.parse import urljoin
-from bs4 import BeautifulSoup
-import requests
+
+from .utils import get_soup, get_program_movie_list_url
+
 
 __all__ = ['get_programs']
 
-def get_soup(url):
-    response = requests.get(url)
-    response.encoding = "Shift_JIS" 
-    html_text = response.text
-    soup = BeautifulSoup(html_text, "html.parser")
-    return soup
-
-def get_program_movie_list_url(program_url):
-    """
-    プログラムIDに_listをつけるとプログラムの映画一覧ページのURLになることを仮定し、プログラムの映画一覧ページのURLを取得
-    """
-
-    program_movie_list_url = program_url.replace(".html", "_list.html")
-    
-    return program_movie_list_url
 
 def get_program_urls(theater_url):
     """
@@ -31,11 +17,11 @@ def get_program_urls(theater_url):
     if not div_tag:
         return []
 
-    program_urls = []
-    for a_tag in div_tag.find_all("a", href=lambda href: href and href.startswith("program/")):
-        program_urls.append(urljoin(theater_url, a_tag["href"]))
-
-    return program_urls
+    return [
+        urljoin(theater_url, a_tag["href"]) 
+        for a_tag 
+        in div_tag.find_all("a", href=lambda href: href and href.startswith("program/"))
+    ]
 
 def get_program_title(program_url):
     """
@@ -43,26 +29,38 @@ def get_program_title(program_url):
     """
     program_soup = get_soup(program_url)
     h3_tags = program_soup.find_all("h3")
-    program_title = [h3_tag.text.replace("\n", " ").replace("\t", "") for h3_tag in h3_tags]
-    program_title = " ".join(program_title)
+    return " ".join([h3_tag.text.strip() for h3_tag in h3_tags])
 
-    return program_title
 
 def extract_date(pattern, text):
-    """指定された正規表現パターンで日付を抽出"""
+    """
+    指定された正規表現パターンで日付を抽出
+    """
     match = re.search(pattern, text)
-    if match:
-        return match.groups()
-    return None
+    return match.groups() if match else None
+
+
+def parse_end_date(end_patterns, schedule, start_date):
+    """
+    終了日を複数のパターンから抽出し、見つからなければ開始日を返す
+    """
+    for pattern in end_patterns:
+        end_date = extract_date(pattern, schedule)
+        if end_date:
+            year = start_date.year
+            if len(end_date) == 4:  # 年月日が含まれるパターン
+                year, month, day = map(int, end_date[1:])
+            elif len(end_date) == 3:  # 月日が含まれるパターン
+                month, day = map(int, end_date[1:])
+            else:  # 日のみが含まれるパターン
+                month, day = start_date.month, int(end_date[1])
+            return datetime(year, month, day).date()
+    return start_date  # 終了日が見つからなかった場合、開始日を返す
+
 
 def get_program_duration(program_url):
-    """
-    プログラムの上映期間を取得
-    """
     program_soup = get_soup(program_url)
     schedule = program_soup.find("p", class_="schedule").text
-
-    # 正規表現パターンを定義
     start_pattern = r"(\d+)年(\d+)月(\d+)日"
     end_patterns = [
         r"(〜|・)(\d+)年(\d+)月(\d+)日",
@@ -70,64 +68,28 @@ def get_program_duration(program_url):
         r"(〜|・)(\d+)日"
     ]
 
-    # 開始日を抽出
     start_date = extract_date(start_pattern, schedule)
-    if start_date:
-        program_start_year, program_start_month, program_start_date = map(int, start_date)
-        program_start_ymd = datetime(program_start_year, program_start_month, program_start_date).date()
-    else:
+    if not start_date:
         raise ValueError("開始日が見つかりません")
-
-    # 終了日を抽出
-    program_end_ymd = None
-    for pattern in end_patterns:
-        end_date = extract_date(pattern, schedule)
-        if end_date:
-            if len(end_date) == 4:  # 年月日が含まれるパターン
-                program_end_year, program_end_month, program_end_date = map(int, end_date[1:])
-            elif len(end_date) == 3:  # 月日が含まれるパターン
-                program_end_year = program_start_ymd.year
-                program_end_month, program_end_date = map(int, end_date[1:])
-            else:  # 日のみが含まれるパターン
-                program_end_year = program_start_ymd.year
-                program_end_month = program_start_ymd.month
-                program_end_date = int(end_date[1])
-            program_end_ymd = datetime(program_end_year, program_end_month, program_end_date).date()
-            break
+    start_date = datetime(*map(int, start_date)).date()
+    end_date = parse_end_date(end_patterns, schedule, start_date)
     
-    # 終了日が見つからなかった場合、開始日と同じにする
-    if not program_end_ymd:
-        program_end_ymd = program_start_ymd
-
-    program_duration_dict = {
-        "start": program_start_ymd.strftime("%Y-%m-%d"),
-        "end": program_end_ymd.strftime("%Y-%m-%d")
-    }
-
-    return program_duration_dict
+    return start_date, end_date
 
 
 def _get_program(program_url):
-
-    program_title = get_program_title(program_url)
-    program_duration = get_program_duration(program_url)
-    program_movie_list_url = get_program_movie_list_url(program_url)
-    
+    start_date, end_date = get_program_duration(program_url)
     return {
-        'title': program_title,
-        'start_date': program_duration['start'],
-        'end_date': program_duration['end'],
+        'title': get_program_title(program_url),
+        'start_date': start_date.strftime("%Y-%m-%d"),
+        'end_date': end_date.strftime("%Y-%m-%d"),
         'program_url': program_url,
-        'program_movie_list_url': program_movie_list_url,
+        'program_movie_list_url': get_program_movie_list_url(program_url),
     }
 
 
 def get_programs(theater_url):
-    program_urls = get_program_urls(theater_url)
-
-    programs = []
-    for program_url in program_urls:
-        program = _get_program(program_url)
-        programs.append(program)
-
-    return programs
+    """
+    指定した劇場URLのプログラム情報を取得
+    """
+    return [_get_program(url) for url in get_program_urls(theater_url)]

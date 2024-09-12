@@ -1,130 +1,102 @@
 import re
-from datetime import datetime, timedelta
-from urllib.parse import urljoin
-from bs4 import BeautifulSoup
-import requests
+from datetime import timedelta
+
+from .utils import get_soup, get_program_movie_list_url
+
 
 __all__ = ['get_movies']
 
-def _get_soup(url):
-    response = requests.get(url)
-    response.encoding = "Shift_JIS" 
-    html_text = response.text
-    soup = BeautifulSoup(html_text, "html.parser")
-    return soup
-
-def _get_program_movie_list_url(program_url):
-    """
-    プログラムIDに_listをつけるとプログラムの映画一覧ページのURLになることを仮定し、プログラムの映画一覧ページのURLを取得
-    """
-
-    program_movie_list_url = program_url.replace(".html", "_list.html")
-    
-    return program_movie_list_url
 
 def _get_movie_tags(program_url):
-    program_movie_list_url = _get_program_movie_list_url(program_url)
-    program_movie_list_soup = _get_soup(program_movie_list_url)
-    movie_tags = program_movie_list_soup.find_all('div', {"class": "data2_film"}, {'id': re.compile(r"movie\d{2}")})
+    """
+    映画のタグを取得
+    """
+    program_movie_list_soup = get_soup(get_program_movie_list_url(program_url))
+    return program_movie_list_soup.find_all('div', {"class": "data2_film"}, {'id': re.compile(r"movie\d{2}")})
 
-    return movie_tags
 
 def _get_movie_id_and_title(movie_tag):
-    # 映画のタイトルを取得
-    movie_title_with_number = movie_tag.find("div", {"class": "data2_title"}).text.replace("\n", "").replace("\t", "")
-    # タイトル内のスペースを半角スペースに置換
-    movie_title_with_number = re.sub(r'\xa0+', ' ', movie_title_with_number)
+    """
+    映画IDとタイトルを取得
+    """
+    movie_title_with_number = movie_tag.find("div", {"class": "data2_title"}).text.strip().replace("\t", "")
+    movie_title_with_number = re.sub(r'\xa0+', ' ', movie_title_with_number)  # スペースを半角スペースに
 
-    # 映画のIDとタイトルを取得
+    # IDとタイトルを抽出
     title_match = re.match(r"(\d+)[.]\s+(.*)", movie_title_with_number)
     if title_match:
-        movie_id = title_match.group(1)
-        movie_title = title_match.group(2)
+        movie_id, movie_title = title_match.groups()
+        return movie_id, movie_title
+    raise ValueError("映画IDとタイトルが見つかりませんでした")
 
-    return movie_id, movie_title
 
 def get_movie_url(program_url, movie_id):
-    program_movie_list_url = _get_program_movie_list_url(program_url)
-    movie_url = f'{program_movie_list_url}#movie{movie_id.zfill(2)}'
+    """
+    映画のURLを生成
+    """
+    return f'{get_program_movie_list_url(program_url)}#movie{movie_id.zfill(2)}'
 
-    return movie_url
 
 def get_movie_type(type_tag):
     """
-    映画タイプを取得
-    神保町シアターの場合、
-        制作年/製作会社/白黒orカラー/上映時間
-    などの情報
+    映画タイプを取得 (例: 制作年、製作会社、白黒/カラー、上映時間)
     """
+    return "/".join(type_tag.text.split(u'\uff0f')[:-1])  # 上映時間を除外
 
-    movie_type_list = type_tag.text.split(u'\uff0f') # 全角スラッシュで区切られていることを仮定
-    movie_type = "/".join(movie_type_list[:-1]) # 上映時間は除く(DRY)
-
-    return movie_type
 
 def get_cast_dict(cast_tag):
     """
-    キャストの辞書を取得
+    キャスト情報を辞書形式で取得
     """
-    cast_list = cast_tag.text.lstrip("■").split("■")
     cast_dict = {}
+    cast_list = cast_tag.text.lstrip("■").split("■")
     for cast in cast_list:
-        work, name = cast.split(u'\uff1a', 1) # 全角コロンでsplit
-        cast_dict[work] = name
-
+        if u'\uff1a' in cast:
+            role, name = cast.split(u'\uff1a', 1)
+            cast_dict[role.strip()] = name.strip()
     return cast_dict
+
 
 def get_synopsis(synopsis_tag):
     """
     あらすじを取得
     """
-    synopsis = synopsis_tag.text
-    return synopsis
+    return synopsis_tag.text.strip()
+
 
 def format_timedelta(movie_timedelta):
-    total_sec = movie_timedelta.total_seconds()
-    
-    minutes = total_sec // 60
-
-    # total time
+    """
+    タイムデルタを「xx分」の形式にフォーマット
+    """
+    minutes = movie_timedelta.total_seconds() // 60
     return f'{int(minutes)}分'
 
+
 def get_movie_timedelta_minute_str(type_tag):
+    """
+    映画の上映時間を取得
+    """
     type_text = type_tag.text
-    # 上映時間を取得
-    timedelta_hour_match = re.search(r'(\d+)時間', type_text)
-    movie_timedelta_hour = timedelta(hours = 0)
-    timedelta_minute_match = re.search(r'(\d+)分', type_text)
-    movie_timedelta_minute = timedelta(minutes = 0)
-
-    if timedelta_hour_match:
-        movie_hour = int(timedelta_hour_match.group(1))
-        movie_timedelta_hour += timedelta(hours = movie_hour)
-    if timedelta_minute_match:
-        movie_minute = int(timedelta_minute_match.group(1))
-        movie_timedelta_minute += timedelta(minutes = movie_minute)
-        
-    movie_timedelta = movie_timedelta_hour + movie_timedelta_minute
-
-    movie_timedelta_minute_str = format_timedelta(movie_timedelta)
-
-    return movie_timedelta_minute_str
+    movie_hour = int(re.search(r'(\d+)時間', type_text).group(1)) if re.search(r'(\d+)時間', type_text) else 0
+    movie_minute = int(re.search(r'(\d+)分', type_text).group(1)) if re.search(r'(\d+)分', type_text) else 0
+    return format_timedelta(timedelta(hours=movie_hour, minutes=movie_minute))
 
 
 def _get_movie(program_url, movie_tag):
+    """
+    映画情報を取得
+    """
     movie_id, movie_title = _get_movie_id_and_title(movie_tag)
     movie_url = get_movie_url(program_url, movie_id)
 
     type_tag, cast_tag, synopsis_tag = movie_tag.find_all("p", {"class": "data2_text"})
-
     movie_type = get_movie_type(type_tag)
     cast_dict = get_cast_dict(cast_tag)
     synopsis = get_synopsis(synopsis_tag)
-
-    movie_timedelta_minute_str = get_movie_timedelta_minute_str(type_tag)
-
-    runtime = movie_timedelta_minute_str
-    staff = '\u25C6'+ '\u25C6'.join(f"{k}: {v}" for k, v in cast_dict.items())
+    runtime = get_movie_timedelta_minute_str(type_tag)
+    
+    # スタッフ情報の整形
+    staff = '◆' + '◆'.join(f"{k}: {v}" for k, v in cast_dict.items())
 
     return {
         'movie_id': movie_id,
@@ -136,10 +108,9 @@ def _get_movie(program_url, movie_tag):
         'staff': staff
     }
 
+
 def get_movies(program_url):
-    movies = []
-    movie_tags = _get_movie_tags(program_url)
-    for movie_tag in movie_tags:
-        movie = _get_movie(program_url, movie_tag)
-        movies.append(movie)
-    return movies
+    """
+    プログラムに紐づく全ての映画情報を取得
+    """
+    return [_get_movie(program_url, movie_tag) for movie_tag in _get_movie_tags(program_url)]
