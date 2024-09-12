@@ -78,7 +78,7 @@ def get_program_duration(program_url):
     return parse_program_duration(schedule_text)
 
 
-def extract_movie_schedule(schedule_text, program_start_year):
+def extract_movie_schedule(schedule_text, program_start_year, program_start_month):
     """
     映画の上映スケジュールを抽出
     """
@@ -87,7 +87,8 @@ def extract_movie_schedule(schedule_text, program_start_year):
         match = re.search(r"(\d+)月(\d+)日（.+）(\d+):(\d+)", line)
         if match:
             month, day, hour, minute = map(int, match.groups())
-            movie_year = program_start_year if month >= program_start_year else program_start_year + 1
+            # 年末の場合の対策
+            movie_year = program_start_year if month >= program_start_month else program_start_year + 1
             movie_start_datetime = datetime(movie_year, month, day, hour, minute)
             movie_start_datetime_list.append(movie_start_datetime.strftime("%Y-%m-%d %H:%M"))
     return movie_start_datetime_list
@@ -99,8 +100,9 @@ def get_movie_start_datetime_str_list(program_url, movie_tag):
     """
     program_duration = get_program_duration(program_url)
     program_start_year = int(program_duration["start"].split("-")[0])
+    program_start_month = int(program_duration["start"].split("-")[1])
     schedule_text = movie_tag.find("p", class_="data2_sche").text
-    return extract_movie_schedule(schedule_text, program_start_year)
+    return extract_movie_schedule(schedule_text, program_start_year, program_start_month)
 
 
 def get_movie_tags(program_url):

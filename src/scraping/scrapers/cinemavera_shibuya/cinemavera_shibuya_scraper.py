@@ -17,5 +17,5 @@ class CinemaveraShibuyaScraper(ScraperInterface):
     
     def scrape_movie_schedules(self, program_url):
 
-        movie_schedules = cinemavera_shibuya_util.get_movie_schedules(self.base_url, program_url)
+        movie_schedules = cinemavera_shibuya_util.get_movie_schedules(self.theater_url, program_url)
         return movie_schedules
