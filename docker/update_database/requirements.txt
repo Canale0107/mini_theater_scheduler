@@ -1,6 +1,0 @@
-beautifulsoup4
-requests
-numpy
-pandas
-colorama
-python-Levenshtein

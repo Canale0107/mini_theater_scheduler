@@ -1,0 +1,101 @@
+<!-- 参考: https://tercel-tech.hatenablog.com/entry/2019/07/06/190452 -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="../static/schedule_style.css">
+  </head>
+  <body>
+    <h1>{{date}}の上映情報</h1>
+
+    <div class="buttons">
+      <a href="{{ url_for('schedule', request_date=previousday) }}">
+        <img src="{{ url_for('static', filename='images/previous.png') }}" width="30" height="30" alt="前日の上映情報を表示する">
+      </a>
+      <a href="{{ url_for('schedule') }}">
+        <img src="{{ url_for('static', filename='images/home.png') }}" width="30" height="30" alt="今日の上映情報を表示する">
+      </a>
+      <a href="{{ url_for('schedule', request_date=nextday) }}">
+        <img src="{{ url_for('static', filename='images/next.png') }}" width="30" height="30" alt="翌日の上映情報を表示する">
+      </a>
+    </div>
+
+    <!-- <div class="lead">テスト</div> -->
+
+    <div class="container">
+      <!-- チャンネル名 -->
+      {% for theater_name in theater_names %}
+        <div class="theater_name" style="grid-column: {{ 2 + 2 * (loop.index0) }} / span 2;">
+            {{ theater_name }}
+        </div>
+      {% endfor %}
+
+      <!-- 24時間の色 -->
+      {% 
+        set colors = [
+          '#2729A5', '#1839AD', '#064DA3', 
+          '#006685', '#007B7D', '#00936E', '#00A646', '#0BB42B', '#19C014', '#3FCD10', '#61DA00', 
+          '#9CE100', '#E0D300', '#FFB51F', '#FF8F40', '#FF6A42', '#F74040', 
+          '#E82650', '#D01975', '#B71994', '#9A1DA7', '#8416C3', '#621BBC',
+          '#4425AF'] 
+      %}
+
+      <!-- 時間軸 -->
+      {% for time in times %}
+        <div class="time-axis" style="grid-row: {{ 2 + 60 * (loop.index0) }} / span 60; background-color: {{ colors[time-1] }};">
+            {{ time|string }}
+        </div>
+      {% endfor %}
+
+      <!-- 映画館ごとに映画を表示 -->
+      {% for theater_name in theater_names%}
+        {% set outer_loop = loop %}
+        <!-- 映画を表示 -->
+        {% for movie in schedule_dict[theater_name|string].values() %}
+          {% set start_hour = movie['start_hour'] %}
+          {% set start_min = movie['start_min'] %}
+          {% set duration_min = movie['duration'] %}
+            <div class="content-box" style="grid-row: {{2+start_min+60*(start_hour-times[0])}} / span {{ duration_min }}; grid-column: {{ 2 + 2 * outer_loop.index0 }} / span 2;"></div>
+            <div class="content-minute" style="grid-row: {{2+start_min+60*(start_hour-times[0])}}; grid-column: {{ 2 + 2 * outer_loop.index0 }}; background-color: {{ colors[start_hour-1] }}"> {{ "%02d" % start_min }} </div>
+            <div class="content" style="grid-row: {{2+start_min+60*(start_hour-times[0])}} / span {{ duration_min }}; grid-column: {{ 3 + 2 * outer_loop.index0 }};">
+              <div class="content-title-and-start-end">
+                <div class="content-title" >
+                  <a class="movie-link" href="{{movie['url']}}" target="_blank">
+                    {{ movie['title'] }}
+                  </a>
+                  （{{ duration_min|string }} 分）
+                </div>
+                <div class="content-start-end" >
+                  {{ movie['start_end_time']}}
+                </div>
+              </div>
+              <div class="content-discription">
+                <p>
+                  {{ movie['type'] }}
+                </p>
+                <p>
+                  {{ movie['staff'] }}
+                </p>
+                <p>
+                  {{ movie['description'] }}
+                </p>
+              </div>
+
+              <!--div class="movie-url">
+                  <a class="movie-link" href="{{movie['url']}}" target="_blank">映画館ページへ</a>
+              </div-->
+            </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+
+    <!-- カラム数をデータに合わせて変更 -->
+    <script>
+      const container = document.querySelector('.container');
+      const numColumns = {{theater_names|length}}; // 動的に変更するカラム数
+      container.style.gridTemplateColumns = `max-content repeat(${numColumns}, max-content minmax(120px, 1fr))`;
+      const numTimes = {{times|length}};
+      container.style.gridTemplateRows = `max-content repeat(${numTimes}, 0.1rem)`;
+    </script>
+    
+  </body>
+</html>
