@@ -11,6 +11,8 @@ def test_scraper(theater_id, output_dirpath):
 
     scraper = ScraperFactory.get_scraper(theater_id)
 
+    os.makedirs(output_dirpath, exist_ok=True)
+
     # プログラム情報を取得
     programs = scraper.scrape_programs()
     save_to_json(os.path.join(output_dirpath, 'programs.json'), programs)
