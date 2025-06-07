@@ -1,7 +1,5 @@
 from src.scraping.scraper_interface import ScraperInterface
-from .scrape_programs import get_programs
-from .scrape_movies import get_movies
-from .scrape_movie_schedules import get_movie_schedules
+from . import jinbocho_theater_util
 
 __all__ = ['JinbochoTheaterScraper']
 
@@ -11,15 +9,15 @@ class JinbochoTheaterScraper(ScraperInterface):
 
     def scrape_programs(self):
 
-        programs = get_programs(self.theater_url)
+        programs = jinbocho_theater_util.get_programs(self.theater_url)
         return programs
 
     def scrape_movies(self, program_url):
 
-        movies = get_movies(program_url)
+        movies = jinbocho_theater_util.get_movies(program_url)
         return movies
     
     def scrape_movie_schedules(self, program_url):
 
-        movie_schedules = get_movie_schedules(program_url)
+        movie_schedules = jinbocho_theater_util.get_movie_schedules(program_url)
         return movie_schedules
