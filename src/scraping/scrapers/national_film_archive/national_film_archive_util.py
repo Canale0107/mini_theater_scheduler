@@ -20,11 +20,21 @@ def _get_program_urls(theater_url):
     """
 
     main_page_soup = _get_soup(theater_url)
-    screening_link = main_page_soup.find("h1", string="開催中の上映").find_next("a")["href"]
+    h1_tag = main_page_soup.find("h1", string="開催中の上映")
+
+    if h1_tag is None:
+        print("開催中の上映セクションが見つかりませんでした")
+        return []
+
+    screening_link_tag = h1_tag.find_next("a")
+    if screening_link_tag is None or "href" not in screening_link_tag.attrs:
+        print("上映リンクが見つかりませんでした")
+        return []
+
+    screening_link = screening_link_tag["href"]
     program_urls = [screening_link]
 
     return program_urls
-
 def _get_program_id(program_url):
     pattern = r"/(\w+)/$"
     match = re.search(pattern, program_url)

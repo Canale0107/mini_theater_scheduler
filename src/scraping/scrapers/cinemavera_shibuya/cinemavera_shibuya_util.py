@@ -323,9 +323,13 @@ def _get_movie_start_datetime_str_list(schedule_tag, program_duration, movies):
                 
                 if film_text != "" and film_text != "\n":
                     is_matched = False
+
+                    # 映画名から余計な情報を削除（例：「麦秋(74分)」→「麦秋」）
+                    film_text_clean = re.sub(r"[（(].*?[)）]", "", film_text).strip()
+
                     for movie in movies:
                         # 邦題と原題の対策
-                        if movie["title"].split(" ")[0] in film_text:
+                        if movie["title"].split(" ")[0] in film_text_clean:
                             movie_schedule_list.append({
                                 'movie_id': movie['movie_id'],
                                 'start_datetime': movie_start_datetime_str
@@ -335,7 +339,7 @@ def _get_movie_start_datetime_str_list(schedule_tag, program_duration, movies):
 
                     if not is_matched:
                         # 一致する映画が一つも見つからなかった場合
-                        target_string = film_text.split(" ")[0]
+                        target_string = film_text_clean.split(" ")[0]
                         min_distance = len(target_string)
                         closest_movie = None
                         for movie in movies:
